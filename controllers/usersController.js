@@ -118,14 +118,14 @@ exports.search = async (req, res) => {
 exports.contacts = async (req, res) => {
   console.log("contacts");
   const { userId } = req.query;
-  console.log("userId", userId);
+  // console.log("userId", userId);
 
   try {
     const rooms = await room_model
       .find({ participants: userId })
       .populate("participants", "_id username phoneNumber");
 
-    console.log("rooms", rooms);
+    // console.log("rooms", rooms);
 
     const contacts = rooms.map((room) => {
       if (room.isGroup) {

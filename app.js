@@ -5,18 +5,22 @@ const { Server } = require("socket.io");
 require("dotenv").config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Use CORS middleware for Express routes
+
+const FRONTEND_URL =
+  process.env.NODE_ENV === "dev"
+    ? "http://localhost:5173"
+    : "http://103.152.106.143:5173";
+
 // app.use(
 //   cors({
-//     origin: "http://localhost:5173", // Replace with your React app's URL
-//     methods: ["GET", "POST", "PUT", "DELETE"],
-//     allowedHeaders: ["Content-Type", "Authorization"],
+//     origin: true,
 //     credentials: true,
 //   })
 // );
 app.use(
   cors({
-    origin: "*", // Adjust this to specify only the frontend's IP if needed
+    origin: FRONTEND_URL,
+    credentials: true,
   })
 );
 app.use(express.json());
@@ -28,13 +32,13 @@ const messages_model = require("./schemas/messagesSchema").messages;
 const rooms_model = require("./schemas/roomsSchema").rooms;
 
 const server = http.createServer(app);
-const io = new Server(server, {
+const io = require("socket.io")(server, {
   cors: {
-    origin: true,
+    origin: FRONTEND_URL, // Replace with your frontend domain
+    methods: ["GET", "POST"],
     credentials: true,
   },
 });
-
 app.get("/", (req, res) => {
   res.status(200).send("Hello from Express!");
   console.log("Hello from Express!");
@@ -75,6 +79,7 @@ io.on("connection", (socket) => {
       });
       await message.save();
       io.to(roomId).emit("message", message);
+      io.to(roomId).emit("new-message", { roomId, sender });
       console.log(`Emitting message to room ${roomId}`);
     }
   );
@@ -84,6 +89,9 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, "0.0.0.0", () =>
+  console.log(`Server running on port ${PORT}`)
+);
 
 module.exports = app;
